@@ -1,6 +1,6 @@
 {
-  "name": "koa-locales",
-  "version": "1.5.2",
+  "name": "koa-locales2",
+  "version": "1.0.0",
   "description": "koa locales, i18n solution for koa",
   "main": "index.js",
   "files": [
@@ -34,15 +34,15 @@
     "pedding": "^1.1.0",
     "supertest": "^2.0.1"
   },
-  "homepage": "https://github.com/koajs/locales",
+  "homepage": "https://github.com/demohi/locales",
   "repository": {
     "type": "git",
-    "url": "git://github.com/koajs/locales.git",
-    "web": "https://github.com/koajs/locales"
+    "url": "git://github.com/demohi/locales.git",
+    "web": "https://github.com/demohi/locales"
   },
   "bugs": {
-    "url": "https://github.com/koajs/locales/issues",
-    "email": "m@fengmk2.com"
+    "url": "https://github.com/demohi/locales/issues",
+    "email": "mds@xue.bi"
   },
   "keywords": [
     "koa-locales",
@@ -57,6 +57,6 @@
   "ci": {
     "version": "4, 6, 7"
   },
-  "author": "fengmk2 <m@fengmk2.com> (https://fengmk2.com)",
+  "author": "mdemo <mds@xue.bi>",
   "license": "MIT"
 }

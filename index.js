@@ -21,7 +21,7 @@ const DEFAULT_OPTIONS = {
 
 module.exports = function (app, options) {
   options = assign({}, DEFAULT_OPTIONS, options);
-  const defaultLocale = formatLocale(options.defaultLocale);
+  const defaultLocale = options.defaultLocale;
   const queryField = options.queryField;
   const cookieField = options.cookieField;
   const localeAlias = options.localeAlias;
@@ -49,8 +49,7 @@ module.exports = function (app, options) {
     for (let j = 0; j < names.length; j++) {
       const name = names[j];
       const filepath = path.join(dir, name);
-      // support en_US.js => en-US.js
-      const locale = formatLocale(name.split('.')[0]);
+      const locale = name.split('.')[0];
       let resource = {};
 
       if (name.endsWith('.js') || name.endsWith('.json')) {
@@ -67,13 +66,16 @@ module.exports = function (app, options) {
   debug('init locales with %j, got %j resources', options, Object.keys(resources));
 
   app.context[functionName] = function (key, value) {
+    if(!this.__resources) {
+      this.__resources = resources;
+    }
     if (arguments.length === 0) {
       // __()
       return '';
     }
 
     const locale = this.__getLocale();
-    const resource = resources[locale] || {};
+    const resource = this.__resources[locale] || {};
 
     let text = resource[key];
     if (text === undefined) {
@@ -126,7 +128,9 @@ module.exports = function (app, options) {
     if (this.__locale) {
       return this.__locale;
     }
-
+    if(!this.__resources) {
+      this.__resources = resources;
+    }
     const cookieLocale = this.cookies.get(cookieField, { signed: false });
     let locale = this.query[queryField] || cookieLocale;
     if (!locale) {
@@ -140,8 +144,8 @@ module.exports = function (app, options) {
           }
           if (languages.length > 0) {
             for (let i = 0; i < languages.length; i++) {
-              const lang = formatLocale(languages[i]);
-              if (resources[lang]) {
+              const lang = languages[i];
+              if (this.__resources[lang]) {
                 locale = lang;
                 break;
               }
@@ -165,10 +169,8 @@ module.exports = function (app, options) {
     // cookie alias
     if (locale in localeAlias) locale = localeAlias[locale];
 
-    locale = formatLocale(locale);
-
     // validate locale
-    if (!resources[locale]) {
+    if (!this.__resources[locale]) {
       locale = defaultLocale;
     }
 
@@ -184,6 +186,10 @@ module.exports = function (app, options) {
     }
     this.__locale = locale;
     return locale;
+  };
+
+  app.context.__setResources = function(resources) {
+    this.__resources = resources;
   };
 };
 
@@ -213,11 +219,6 @@ function formatWithObject(text, values) {
     // not match index, return orignal text
     return orignal;
   });
-}
-
-function formatLocale(locale) {
-  // support zh_CN, en_US => zh-CN, en-US
-  return locale.replace('_', '-').toLowerCase();
 }
 
 function flattening(data) {
