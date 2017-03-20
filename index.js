@@ -1,9 +1,7 @@
 'use strict';
 
 const debug = require('debug')('koa-locales');
-const ini = require('ini');
 const util = require('util');
-const fs = require('fs');
 const path = require('path');
 const ms = require('humanize-ms');
 const assign = require('object-assign');
@@ -26,56 +24,16 @@ module.exports = function (app, options) {
   const cookieField = options.cookieField;
   const localeAlias = options.localeAlias;
   const cookieMaxAge = ms(options.cookieMaxAge);
-  const localeDir = options.dir;
-  const localeDirs = options.dirs;
   const functionName = options.functionName;
-  const resources = {};
-
-  /**
-   * @Deprecated Use options.dirs instead.
-   */
-  if (localeDir && localeDirs.indexOf(localeDir) === -1) {
-    localeDirs.push(localeDir);
-  }
-
-  for (let i = 0; i < localeDirs.length; i++) {
-    const dir = localeDirs[i];
-
-    if (!fs.existsSync(dir)) {
-      continue;
-    }
-
-    const names = fs.readdirSync(dir);
-    for (let j = 0; j < names.length; j++) {
-      const name = names[j];
-      const filepath = path.join(dir, name);
-      const locale = name.split('.')[0];
-      let resource = {};
-
-      if (name.endsWith('.js') || name.endsWith('.json')) {
-        resource = flattening(require(filepath));
-      } else if (name.endsWith('.properties')) {
-        resource = ini.parse(fs.readFileSync(filepath, 'utf8'));
-      }
-
-      resources[locale] = resources[locale] || {};
-      assign(resources[locale], resource);
-    }
-  }
-
-  debug('init locales with %j, got %j resources', options, Object.keys(resources));
 
   app.context[functionName] = function (key, value) {
-    if(!this.__resources) {
-      this.__resources = resources;
-    }
     if (arguments.length === 0) {
       // __()
       return '';
     }
 
     const locale = this.__getLocale();
-    const resource = this.__resources[locale] || {};
+    const resource = this.__resource || {};
 
     let text = resource[key];
     if (text === undefined) {
@@ -128,9 +86,6 @@ module.exports = function (app, options) {
     if (this.__locale) {
       return this.__locale;
     }
-    if(!this.__resources) {
-      this.__resources = resources;
-    }
     const cookieLocale = this.cookies.get(cookieField, { signed: false });
     let locale = this.query[queryField] || cookieLocale;
     if (!locale) {
@@ -143,17 +98,7 @@ module.exports = function (app, options) {
             languages = languages.slice(1);
           }
           if (languages.length > 0) {
-            for (let i = 0; i < languages.length; i++) {
-              const lang = languages[i];
-              if (this.__resources[lang]) {
-                locale = lang;
-                break;
-              }
-            }
-            if (!locale) {
-              // set the first one
-              locale = languages[0];
-            }
+            locale = languages[0];
           }
         } else {
           locale = languages;
@@ -168,12 +113,6 @@ module.exports = function (app, options) {
 
     // cookie alias
     if (locale in localeAlias) locale = localeAlias[locale];
-
-    // validate locale
-    if (!this.__resources[locale]) {
-      locale = defaultLocale;
-    }
-
     // if header not send, set the locale cookie
     if (cookieLocale !== locale && !this.headerSent) {
       // locale change, need to set cookie
@@ -219,25 +158,4 @@ function formatWithObject(text, values) {
     // not match index, return orignal text
     return orignal;
   });
-}
-
-function flattening(data) {
-
-  const result = {};
-
-  function deepFlat (data, keys) {
-    Object.keys(data).forEach(function(key) {
-      const value = data[key];
-      const k = keys ? keys + '.' + key : key;
-      if (isObject(value)) {
-        deepFlat(value, k);
-      } else {
-        result[k] = String(value);
-      }
-    });
-  }
-
-  deepFlat(data, '');
-
-  return result;
 }
