@@ -127,8 +127,8 @@ module.exports = function (app, options) {
     return locale;
   };
 
-  app.context.__setResources = function(resources) {
-    this.__resources = resources;
+  app.context.__setResource = function(resource) {
+    this.__resource = resource;
   };
 };
 
@@ -152,7 +152,7 @@ const Object_INDEX_RE = /\{(.+?)\}/g;
 function formatWithObject(text, values) {
   return text.replace(Object_INDEX_RE, function (orignal, matched) {
     const value = values[matched];
-    if (value) {
+    if (typeof value !== 'boolean' && (!!value || value === 0 || value === '')) {
       return value;
     }
     // not match index, return orignal text
