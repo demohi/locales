@@ -7,7 +7,7 @@ const ms = require('humanize-ms');
 const assign = require('object-assign');
 
 const DEFAULT_OPTIONS = {
-  defaultLocale: 'en-US',
+  defaultLocale: 'en_US',
   queryField: 'locale',
   cookieField: 'locale',
   localeAlias: {},
@@ -86,6 +86,9 @@ module.exports = function (app, options) {
     if (this.__locale) {
       return this.__locale;
     }
+    if (typeof this.getHeader !== 'function') {
+      return defaultLocale;
+    }
     const cookieLocale = this.cookies.get(cookieField, { signed: false });
     let locale = this.query[queryField] || cookieLocale;
     if (!locale) {
@@ -104,7 +107,6 @@ module.exports = function (app, options) {
           locale = languages;
         }
       }
-
       // all missing, set it to defaultLocale
       if (!locale) {
         locale = defaultLocale;
